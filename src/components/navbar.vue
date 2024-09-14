@@ -37,7 +37,7 @@ const items = ref([
     dontshowonauth: false,
     label: 'My Cards',
     icon: 'pi pi-id-card',
-    to: { name: 'Home' },
+    to: { name: 'Cards' },
     root: true,
   },
   {
@@ -45,7 +45,7 @@ const items = ref([
     dontshowonauth: false,
     label: 'My Library',
     icon: 'pi pi-bookmark-fill',
-    to: { name: 'Home' },
+    to: { name: 'Library' },
     root: true,
   },
   {
@@ -61,7 +61,7 @@ const items = ref([
     dontshowonauth: true,
     label: 'Register',
     icon: 'pi pi-user-plus',
-    to: { name: 'Login' },
+    to: { name: 'Register' },
     root: true,
   },
   {
