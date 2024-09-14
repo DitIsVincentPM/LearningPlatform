@@ -1,12 +1,14 @@
 <script setup>
 import Button from "primevue/button";
+
+defineProps(['name'])
 </script>
 
 <template>
   <div class="bg-surface-0 dark:bg-surface-950 px-6 py-8 md:px-12 lg:px-20">
     <ul class="list-none p-0 m-0 flex items-center font-medium mb-4">
       <li>
-        <a class="text-surface-500 dark:text-surface-300 no-underline leading-normal cursor-pointer">Home</a>
+        <a class="text-surface-500 dark:text-surface-300 no-underline leading-normal cursor-pointer">{{ name }}</a>
       </li>
       <!-- <li class="px-2">
         <i class="pi pi-angle-right text-surface-500 dark:text-surface-300 leading-normal" />
