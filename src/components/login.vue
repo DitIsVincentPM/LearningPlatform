@@ -4,23 +4,32 @@ import axios from 'axios';
 import Button from 'primevue/button';
 import Checkbox from 'primevue/checkbox';
 import InputText from 'primevue/inputtext';
+import Message from 'primevue/message';
 
 const checked1 = ref(true);
 const name = ref('');
 const password = ref('');
 const message = ref('');
 
+var severityError = ref("error")
+
 const handleLogin = async () => {
   try {
-    const response = await axios.post('http://localhost:3000/login', {
+    const response = await axios.post('http://localhost:8080/api/login', {
       username: name.value,
       password: password.value
     });
+
+    localStorage.setItem('token', response.data.token); // Store token
     message.value = response.data.message;
+    severityError = "success"
+    window.location.reload();
   } catch (error) {
     message.value = error.response?.data?.message || 'An error occurred';
+    severityError = "error";
   }
 };
+
 </script>
 
 <template>
@@ -37,6 +46,7 @@ const handleLogin = async () => {
       </div>
 
       <div>
+        <Message v-if="message" :severity="severityError" class="mt-4 text-center mb-4">{{ message }}</Message>
         <label for="email1" class="text-surface-900 dark:text-surface-0 font-medium mb-2 block">Email</label>
         <InputText v-model="name" type="text" placeholder="Email address" class="w-full mb-4" />
 
@@ -56,8 +66,6 @@ const handleLogin = async () => {
           <Button label="Log In" icon="pi pi-user" class="w-2/3" @click="handleLogin" />
           <Button label="Sign In" severity="secondary" outlined icon="pi pi-user-plus" class="w-1/3" />
         </div>
-
-        <div v-if="message" class="mt-4 text-center">{{ message }}</div>
       </div>
     </div>
   </div>
