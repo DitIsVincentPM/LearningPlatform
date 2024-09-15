@@ -25,8 +25,8 @@ onMounted(async () => {
       <div class="font-medium text-3xl text-surface-900 dark:text-surface-0 mb-4 text-center">Your Card Collections</div>
       <div class="text-surface-500 dark:text-surface-300 mb-8 text-center">Here you can see all your collections create new ones or edit old ones.</div>
 
-      <div class="flex justify-center">
-      <ul class="list-none p-0 m-0 justify-center container bg-green-50">
+      <div class="flex justify-center border-0">
+      <ul class="list-none p-0 m-0 border-0 justify-center container bg-green-50 dark:bg-emerald-900">
         <li v-for="collection in collections" :key="collection.id" class="mb-4">
           <Card :model="collection" :id="collection.id" :name="collection.name"></Card>
         </li>
