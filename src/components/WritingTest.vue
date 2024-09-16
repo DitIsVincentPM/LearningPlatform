@@ -3,6 +3,7 @@ import InputText from "primevue/inputtext";
 import FloatLabel from "primevue/floatlabel";
 import Button from "primevue/button";
 import Message from "primevue/message";
+import Dialog from "primevue/dialog";
 import { ref, defineEmits } from 'vue';
 
 const props = defineProps({
@@ -10,12 +11,12 @@ const props = defineProps({
   backText: String
 });
 
-const emit = defineEmits(['test-complete', 'test-summary']);
+const emit = defineEmits(['test-complete', 'add-incorrect-answer']);
 
 const userAnswer = ref('');
 const resultMessage = ref('');
 const isCorrect = ref(false);
-const isAnswerRevealed = ref(false);
+const showAnswer = ref(false);
 
 const checkAnswer = () => {
   const normalizedAnswer = userAnswer.value.trim().toLowerCase();
@@ -24,40 +25,47 @@ const checkAnswer = () => {
   if (normalizedAnswer === normalizedBackText) {
     isCorrect.value = true;
     resultMessage.value = 'Correct!';
+    emit('test-complete', true); // Emit correctness
+    userAnswer.value = '';
 
-    // Proceed to the next question after a delay
+    // Clear text box and result message after a delay
     setTimeout(() => {
-      emit('test-complete');
       ClearBox();
     }, 1000);
   } else {
     isCorrect.value = false;
     resultMessage.value = 'Incorrect. Please try again.';
-    emit('add-incorrect-answer', { frontText: props.frontText, backText: props.backText, userAnswer: normalizedAnswer });
   }
+};
+
+const showAnswerAndStop = () => {
+  showAnswer.value = true;
+
+  emit('add-incorrect-answer', {
+    frontText: props.frontText,
+    backText: props.backText,
+    userAnswer: userAnswer.value || 'No answer provided'
+  });
+
+  // Clear text box and result message after a delay
+  setTimeout(() => {
+    ClearBox();
+    showAnswer.value = false; // Reset showAnswer to hide the answer
+    emit('test-complete'); // Proceed to the next question
+  }, 2000);
 };
 
 const ClearBox = () => {
   resultMessage.value = '';
-  userAnswer.value = '';
-}
-
-const revealAnswer = () => {
-  isAnswerRevealed.value = true;
 };
 
-const nextQuestion = () => {
-  emit('test-complete');
-  ClearBox();
-  isAnswerRevealed.value = false;
-}
 </script>
 
 <template>
   <div class="flex gap-2">
     <div class="flex gap-2">
       <Message severity="contrast" class="mb-8">{{ frontText }}</Message>
-      <div v-if="!isAnswerRevealed">
+      <div v-if="!showAnswer">
         <FloatLabel>
           <InputText v-model="userAnswer" id="text" />
           <label for="text">Type the answer here...</label>
@@ -67,16 +75,12 @@ const nextQuestion = () => {
           {{ resultMessage }}
         </div>
       </div>
-      <div v-else>
-        <Message severity="info" class="mb-8">{{ backText }}</Message>
+      <div v-if="showAnswer">
+        <Message severity="info">The correct answer is: {{ props.backText }}</Message>
       </div>
     </div>
 
-    <Button class="h-11" @click="isAnswerRevealed ? nextQuestion() : checkAnswer()">
-      {{ isAnswerRevealed ? 'Next Question' : 'Check Answer' }}
-    </Button>
-    <Button v-if="!isAnswerRevealed" class="h-11 ml-2" @click="revealAnswer">
-      Reveal Answer
-    </Button>
+    <Button class="h-11" @click="checkAnswer" v-if="!showAnswer">Check Answer</Button>
+    <Button class="h-11" outlined severity="info" @click="showAnswerAndStop" v-if="!showAnswer">Show Answer</Button>
   </div>
 </template>
