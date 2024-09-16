@@ -69,6 +69,9 @@ const startWritingTest = () => {
   currentCardIndex.value = 0;
   correctAnswers.value = 0;
   incorrectAnswers.value = [];
+
+  // Shuffle the cards before starting the test
+  shuffleArray(cards.value);
 };
 
 const handleTestComplete = (isAnswerCorrect) => {
@@ -88,10 +91,19 @@ const closeSummaryDialog = () => {
   isTesting.value = false;
 };
 
-onMounted(() => {
-  loadCards();
-  loadCollection();
+onMounted(async () => {
+  await loadCards();
+  await loadCollection();
+  shuffleArray(cards.value); // Shuffle cards after loading
 });
+
+const shuffleArray = (array) => {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+  }
+};
+
 </script>
 
 <template>
