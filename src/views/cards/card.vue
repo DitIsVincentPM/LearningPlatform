@@ -2,13 +2,15 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import flashcard from "@/components/flashcard.vue";
-import pageheader from "@/components/pageheader.vue";
+import Pageheader from "@/components/pageheader.vue";
 import { getCardsFromCollection } from '@/utils/getCardsFromCollection.js';
 import Message from "primevue/message";
 import { getCollectionData } from "@/utils/getCollectionData.js";
 import ToggleButton from 'primevue/togglebutton';
 import WritingTest from "@/components/WritingTest.vue";
 import Dialog from 'primevue/dialog';
+import Button from 'primevue/button'; // Import Button component
+import { useToast } from 'primevue/usetoast'; // Import useToast
 
 const route = useRoute();
 const cards = ref([]);
@@ -19,6 +21,7 @@ const currentCardIndex = ref(0);
 const correctAnswers = ref(0);
 const incorrectAnswers = ref([]);
 const showSummaryDialog = ref(false);
+const toast = useToast(); // Use toast for notifications
 
 const loadCards = async () => {
   try {
@@ -81,7 +84,6 @@ const handleTestComplete = (isAnswerCorrect) => {
   nextCard();
 };
 
-
 const handleAddIncorrectAnswer = (incorrectAnswer) => {
   incorrectAnswers.value.push(incorrectAnswer);
 };
@@ -89,6 +91,31 @@ const handleAddIncorrectAnswer = (incorrectAnswer) => {
 const closeSummaryDialog = () => {
   showSummaryDialog.value = false;
   isTesting.value = false;
+};
+
+const generateShareLink = async () => {
+  try {
+    const collectionId = route.params.id;
+    const response = await fetch('http://localhost:8080/api/generate-share-link', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify({ collectionId })
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+      navigator.clipboard.writeText(data.link);
+      toast.add({ severity: 'success', summary: 'Share Link Generated', detail: `Link copied to clipboard: ${data.link}` });
+    } else {
+      toast.add({ severity: 'error', summary: 'Error', detail: data.message });
+    }
+  } catch (error) {
+    console.error('Error generating share link:', error);
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to generate share link' });
+  }
 };
 
 onMounted(async () => {
@@ -107,15 +134,16 @@ const shuffleArray = (array) => {
 </script>
 
 <template>
-  <pageheader name="Collection" root="Collections" :path="collection"></pageheader>
+  <Pageheader name="Collection" root="Collections" :path="collection"></Pageheader>
   <div class="flex justify-center">
     <div class="container">
       <div class="flex justify-center mt-6">
         <ToggleButton @click="isFlipped = !isFlipped" v-model="checked" onLabel="Switch Text" offLabel="Switch Text"
                       onIcon="pi pi-fast-forward" offIcon="pi pi-fast-backward" class="w-36"
                       aria-label="Do you confirm"/>
-        <button v-if="!isTesting" @click="startWritingTest" class="ml-4 p-button p-component">Start Writing Test</button>
-        <button v-if="isTesting" @click="showSummaryDialog = true" class="ml-4 p-button p-component">Stop Test</button>
+        <Button v-if="!isTesting" @click="startWritingTest" severity="info" outlined class="ml-4 p-button p-component">Start Writing Test</Button>
+        <Button v-if="isTesting" @click="showSummaryDialog = true" severity="danger" outlined class="ml-4 p-button p-component">Stop Test</Button>
+        <Button @click="generateShareLink" class="ml-4 p-button p-component p-button-secondary">Generate Share Link</Button>
       </div>
 
       <h1 class="text-center font-bold text-3xl p-5">{{ collection }}</h1>
@@ -155,3 +183,4 @@ const shuffleArray = (array) => {
     <Button @click="closeSummaryDialog" label="Close" class="p-button p-component">Close</Button>
   </Dialog>
 </template>
+

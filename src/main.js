@@ -6,6 +6,7 @@ import './assets/main.css'
 import 'primeicons/primeicons.css'
 import router from '@/router/router.js'; // Import the router
 import dotenv from 'dotenv';
+import ToastService from 'primevue/toastservice';
 
 const app = createApp(App);
 
@@ -16,5 +17,6 @@ app.use(PrimeVue, {
     },
 });
 app.use(router);
+app.use(ToastService);
 
 app.mount('#app');
