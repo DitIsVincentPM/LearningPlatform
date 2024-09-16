@@ -1,10 +1,12 @@
 // utils/getCardCollections.js
 import axios from 'axios'; // Using Axios for HTTP requests
+import dotenv from 'dotenv';
 
 export const getCardCollections = async () => {
     try {
+
         const token = localStorage.getItem('token'); // Assuming JWT is stored in localStorage
-        const response = await axios.get('http://localhost:8080/api/getCardCollections', {
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/getCardCollections`, {
             headers: {
                 Authorization: `Bearer ${token}`
             }

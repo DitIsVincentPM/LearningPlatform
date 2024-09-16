@@ -5,6 +5,7 @@ import Aura from '@primevue/themes/aura'; // Assuming Nora is correctly configur
 import './assets/main.css'
 import 'primeicons/primeicons.css'
 import router from '@/router/router.js'; // Import the router
+import dotenv from 'dotenv';
 
 const app = createApp(App);
 

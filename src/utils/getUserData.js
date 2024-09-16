@@ -3,7 +3,7 @@ import axios from 'axios';
 
 export const getUserData = async () => {
     try {
-        const response = await axios.get('http://localhost:8080/api/getUserData', {
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/getUserData`, {
             headers: {
                 Authorization: `Bearer ${localStorage.getItem('token')}`
             }
@@ -14,3 +14,4 @@ export const getUserData = async () => {
         throw error; // Rethrow error to handle it in the component
     }
 };
+

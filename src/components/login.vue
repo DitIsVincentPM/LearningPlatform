@@ -15,7 +15,7 @@ var severityError = ref("error")
 
 const handleLogin = async () => {
   try {
-    const response = await axios.post('http://localhost:8080/api/login', {
+    const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/login`, {
       username: name.value,
       password: password.value
     });
