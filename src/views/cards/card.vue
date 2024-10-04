@@ -14,6 +14,7 @@ import { useToast } from 'primevue/usetoast';
 import {addCards} from "@/utils/addCards.js"; // Import useToast
 import {deleteCard} from "@/utils/deleteCard.js"; // Import useToast
 import {editCard} from "@/utils/editCard.js"; // Import useToast
+import { getShareLink } from '@/utils/getShareLink.js';
 
 const route = useRoute();
 const cards = ref([]);
@@ -77,35 +78,25 @@ const openEditDialog = (card) => {
   showEditDialog.value = true;
 };
 
-// Function to save card changes
+// Function to save card changes 
 const saveCardChanges = async () => {
   try {
-    const response = await fetch(`http://localhost:8080/api/editCard/${editCardData.value.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      },
-      body: JSON.stringify({
-        frontText: editCardData.value.frontText,
-        backText: editCardData.value.backText,
-      })
+    const response = await editCard(editCardData.value.id, {
+      frontText: editCardData.value.frontText,
+      backText: editCardData.value.backText
     });
 
-    if (response.ok) {
-      const updatedCard = await response.json();
-      const index = cards.value.findIndex(c => c.id === editCardData.value.id);
-      if (index !== -1) cards.value[index] = updatedCard.card;
-      toast.add({ severity: 'success', summary: 'Card Updated', detail: 'Card updated successfully' });
-    } else {
-      const data = await response.json();
-      toast.add({ severity: 'error', summary: 'Error', detail: data.message });
-    }
+    // Find and update the card in the local state
+    const index = cards.value.findIndex(c => c.id === editCardData.value.id);
+    if (index !== -1) cards.value[index] = response.card;
+
+    toast.add({ severity: 'success', summary: 'Card Updated', detail: 'Card updated successfully' });
+
+    // Refresh the cards after saving
+    await loadCards();
   } catch (error) {
-    console.error('Error updating card:', error);
     toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to update card' });
   }
-
   showEditDialog.value = false;
 };
 
@@ -180,33 +171,26 @@ const closeSummaryDialog = () => {
 };
 
 const generateShareLink = async () => {
-  try {
     const collectionId = route.params.id;
-    const response = await fetch('http://localhost:8080/api/generate-share-link', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      },
-      body: JSON.stringify({collectionId})
-    });
 
-    const data = await response.json();
-    if (response.ok) {
-      navigator.clipboard.writeText(data.link);
-      toast.add({
-        severity: 'success',
-        summary: 'Share Link Generated',
-        detail: `Link copied to clipboard: ${data.link}`
-      });
-    } else {
-      toast.add({severity: 'error', summary: 'Error', detail: data.message});
+    try {
+        const link = await getShareLink(collectionId);
+        navigator.clipboard.writeText(link);
+        
+        toast.add({
+            severity: 'success',
+            summary: 'Share Link Generated',
+            detail: `Link copied to clipboard: ${link}`
+        });
+    } catch (error) {
+        toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: error.message || 'Failed to generate share link'
+        });
     }
-  } catch (error) {
-    console.error('Error generating share link:', error);
-    toast.add({severity: 'error', summary: 'Error', detail: 'Failed to generate share link'});
-  }
 };
+
 
 onMounted(async () => {
   await loadCards();

@@ -22,7 +22,6 @@ function handleDelete() {
       <router-link :to="`/cards/${props.id}`">
         <Button label="Start Learning" icon="pi pi-book" text/>
       </router-link>
-      <Button label="Edit" icon="pi pi-pencil" outlined/>
       <!-- Delete button -->
       <Button label="Delete" icon="pi pi-trash" class="p-button-danger" outlined @click="handleDelete"/>
     </div>
