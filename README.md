@@ -8,7 +8,7 @@ Open Source and Free to use.
 Currently you can view cards and do a writing test with them and switch the text, now you can only add cards/collections through a database.
 
 ## TODO:
-* Ability to add cards and collections without using database
+V Ability to add cards and collections without using database
 * PDF Upload for books.
 * Book viewer
 * Book marker
