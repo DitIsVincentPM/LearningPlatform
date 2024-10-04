@@ -10,7 +10,10 @@ import ToggleButton from 'primevue/togglebutton';
 import WritingTest from "@/components/WritingTest.vue";
 import Dialog from 'primevue/dialog';
 import Button from 'primevue/button'; // Import Button component
-import { useToast } from 'primevue/usetoast'; // Import useToast
+import { useToast } from 'primevue/usetoast';
+import {addCards} from "@/utils/addCards.js"; // Import useToast
+import {deleteCard} from "@/utils/deleteCard.js"; // Import useToast
+import {editCard} from "@/utils/editCard.js"; // Import useToast
 
 const route = useRoute();
 const cards = ref([]);
@@ -22,6 +25,89 @@ const correctAnswers = ref(0);
 const incorrectAnswers = ref([]);
 const showSummaryDialog = ref(false);
 const toast = useToast(); // Use toast for notifications
+const isEditMode = ref(false);
+const showEditDialog = ref(false);
+const editCardData = ref(null);
+const showCreateDialog = ref(false);
+const newCardData = ref({ frontText: '', backText: '' });
+
+
+// Function to create a new card
+const createCard = async () => {
+  try {
+    const collectionId = route.params.id;
+    const cardToAdd = {
+      name: newCardData.value.frontText,
+      description: newCardData.value.backText,
+    };
+
+    await addCards(collectionId, [cardToAdd]);
+    toast.add({ severity: 'success', summary: 'Card Created', detail: 'New card added successfully' });
+    newCardData.value = { frontText: '', backText: '' };
+    showCreateDialog.value = false;
+
+    await loadCards()
+  } catch (error) {
+    console.error('Error creating card:', error);
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to create card' });
+  }
+};
+
+// Function to delete a card
+const deleteCardL = async (cardId) => {
+  try {
+    // Call the deleteCard function from the service
+    const response = await deleteCard(cardId);
+
+    // If the response is successful, update the local state
+    if (response) {
+      toast.add({ severity: 'success', summary: 'Card Deleted', detail: `Card ID: ${cardId} deleted successfully` });
+      cards.value = cards.value.filter(card => card.id !== cardId); // Update cards array locally
+    }
+  } catch (error) {
+    console.error('Error deleting card:', error);
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to delete card' });
+  }
+};
+
+
+// Function to open the edit dialog
+const openEditDialog = (card) => {
+  editCardData.value = { ...card };
+  showEditDialog.value = true;
+};
+
+// Function to save card changes
+const saveCardChanges = async () => {
+  try {
+    const response = await fetch(`http://localhost:8080/api/editCard/${editCardData.value.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify({
+        frontText: editCardData.value.frontText,
+        backText: editCardData.value.backText,
+      })
+    });
+
+    if (response.ok) {
+      const updatedCard = await response.json();
+      const index = cards.value.findIndex(c => c.id === editCardData.value.id);
+      if (index !== -1) cards.value[index] = updatedCard.card;
+      toast.add({ severity: 'success', summary: 'Card Updated', detail: 'Card updated successfully' });
+    } else {
+      const data = await response.json();
+      toast.add({ severity: 'error', summary: 'Error', detail: data.message });
+    }
+  } catch (error) {
+    console.error('Error updating card:', error);
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to update card' });
+  }
+
+  showEditDialog.value = false;
+};
 
 const loadCards = async () => {
   try {
@@ -102,19 +188,23 @@ const generateShareLink = async () => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${localStorage.getItem('token')}`
       },
-      body: JSON.stringify({ collectionId })
+      body: JSON.stringify({collectionId})
     });
 
     const data = await response.json();
     if (response.ok) {
       navigator.clipboard.writeText(data.link);
-      toast.add({ severity: 'success', summary: 'Share Link Generated', detail: `Link copied to clipboard: ${data.link}` });
+      toast.add({
+        severity: 'success',
+        summary: 'Share Link Generated',
+        detail: `Link copied to clipboard: ${data.link}`
+      });
     } else {
-      toast.add({ severity: 'error', summary: 'Error', detail: data.message });
+      toast.add({severity: 'error', summary: 'Error', detail: data.message});
     }
   } catch (error) {
     console.error('Error generating share link:', error);
-    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to generate share link' });
+    toast.add({severity: 'error', summary: 'Error', detail: 'Failed to generate share link'});
   }
 };
 
@@ -141,9 +231,16 @@ const shuffleArray = (array) => {
         <ToggleButton @click="isFlipped = !isFlipped" v-model="checked" onLabel="Switch Text" offLabel="Switch Text"
                       onIcon="pi pi-fast-forward" offIcon="pi pi-fast-backward" class="w-36"
                       aria-label="Do you confirm"/>
-        <Button v-if="!isTesting" @click="startWritingTest" severity="info" outlined class="ml-4 p-button p-component">Start Writing Test</Button>
-        <Button v-if="isTesting" @click="showSummaryDialog = true" severity="danger" outlined class="ml-4 p-button p-component">Stop Test</Button>
-        <Button @click="generateShareLink" class="ml-4 p-button p-component p-button-secondary">Generate Share Link</Button>
+        <Button v-if="!isTesting" @click="startWritingTest" severity="info" outlined class="ml-4 p-button p-component">
+          Start Writing Test
+        </Button>
+        <Button v-if="isTesting" @click="showSummaryDialog = true" severity="danger" outlined
+                class="ml-4 p-button p-component">Stop Test
+        </Button>
+        <Button @click="generateShareLink" class="ml-4 p-button p-component p-button-secondary">Generate Share Link
+        </Button>
+        <Button @click="isEditMode = !isEditMode" class="ml-4 p-button p-component p-button-warning">Toggle Edit Mode</Button>
+        <Button @click="showCreateDialog = true" class="ml-4 p-button p-component p-button-success">Create Card</Button>
       </div>
 
       <h1 class="text-center font-bold text-3xl p-5">{{ collection }}</h1>
@@ -163,6 +260,11 @@ const shuffleArray = (array) => {
       <div v-else class="flex justify-center items-center p-5 gap-6 flex-wrap">
         <div v-for="card in flippedCards" :key="card.id" class="col-span-4">
           <flashcard :frontText="card.frontText" :backText="card.backText"></flashcard>
+
+          <div v-if="isEditMode" class="flex gap-2 mt-2">
+            <Button label="Edit" icon="pi pi-pencil" @click="openEditDialog(card)" class="p-button p-component p-button-info"></Button>
+            <Button label="Delete" icon="pi pi-trash" @click="deleteCardL(card.id)" class="p-button p-component p-button-danger"></Button>
+          </div>
         </div>
       </div>
     </div>
@@ -180,7 +282,37 @@ const shuffleArray = (array) => {
         </li>
       </ul>
     </div>
-    <Button @click="closeSummaryDialog" label="Close" class="p-button p-component">Close</Button>
+    <Button @click="closeSummaryDialog" label="Close" outlined class="p-button p-component">Close</Button>
+  </Dialog>
+
+
+  <!-- Edit Card Dialog -->
+  <Dialog v-model:visible="showEditDialog" header="Edit Card" :style="{ width: '50vw' }">
+    <div>
+      <p><strong>Front Text:</strong></p>
+      <textarea v-model="editCardData.frontText" class="w-full"></textarea>
+
+      <p class="mt-4"><strong>Back Text:</strong></p>
+      <textarea v-model="editCardData.backText" class="w-full"></textarea>
+    </div>
+    <template #footer>
+      <Button @click="saveCardChanges" label="Save" icon="pi pi-check" class="p-button p-component p-button-success"></Button>
+      <Button @click="showEditDialog = false" label="Cancel" icon="pi pi-times" outlined class="p-button p-component p-button-danger"></Button>
+    </template>
+  </Dialog>
+
+  <!-- Create Card Dialog -->
+  <Dialog v-model:visible="showCreateDialog" header="Create New Card" :style="{ width: '50vw' }">
+    <div>
+      <p><strong>Front Text:</strong></p>
+      <textarea v-model="newCardData.frontText" class="w-full"></textarea>
+
+      <p class="mt-4"><strong>Back Text:</strong></p>
+      <textarea v-model="newCardData.backText" class="w-full"></textarea>
+    </div>
+    <template #footer>
+      <Button @click="createCard" label="Create" icon="pi pi-plus" class="p-button p-component p-button-success"></Button>
+      <Button @click="showCreateDialog = false" label="Cancel" icon="pi pi-times" outlined class="p-button p-component p-button-danger"></Button>
+    </template>
   </Dialog>
 </template>
-
